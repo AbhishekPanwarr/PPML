@@ -7,7 +7,11 @@ use tfhe::integer::RadixClientKey;
 use tracing::info;
 
 use ppml_core::context::FheContext;
-use ppml_core::export::write_model_export;
+use ppml_core::export::{
+    write_local_mask_store, write_masked_model_package, write_model_export, LocalMaskStore,
+    MaskedModelMetadata, MaskedModelPackage,
+};
+use ppml_core::masking::{generate_mask, mask_encrypted_tensor};
 use ppml_core::model::LogisticModel;
 use ppml_core::noise::NoiseScheduler;
 use ppml_core::optimizer::SgdOptimizer;
@@ -120,6 +124,30 @@ fn main() -> Result<(), TensorError> {
 
     let final_quantized_weights = decrypt_parameter_vector(&model.weights, &quantizer, &client_key);
     let final_quantized_bias = decrypt_parameter_vector(&model.bias, &quantizer, &client_key);
+    let session_id = format!("mask-session-{}", std::time::UNIX_EPOCH.elapsed().unwrap().as_nanos());
+    let mask_weights = generate_mask(model.weights.shape().dims());
+    let masked_encrypted_weights = mask_encrypted_tensor(&model.weights, &mask_weights);
+
+    write_local_mask_store(
+        &ppml_root().join("local_mask.json"),
+        &LocalMaskStore {
+            session_id: session_id.clone(),
+            mask_weights,
+        },
+    )?;
+    write_masked_model_package(
+        &ppml_root().join("hospital_payload.json"),
+        &MaskedModelPackage {
+            session_id,
+            masked_encrypted_weights,
+            metadata: MaskedModelMetadata {
+                backend: ctx.backend_name().to_string(),
+                rows: model.weights.shape().rows(),
+                cols: model.weights.shape().cols(),
+                element_count: model.weights.shape().elem_count(),
+            },
+        },
+    )?;
 
     fs::write("fhenix_weights.bin", model.weights.to_bytes()?).map_err(io_to_tensor_error)?;
     fs::write("fhenix_bias.bin", model.bias.to_bytes()?).map_err(io_to_tensor_error)?;

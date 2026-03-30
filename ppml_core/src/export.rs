@@ -2,14 +2,14 @@ use std::error::Error;
 use std::fs;
 use std::path::Path;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::dataset::CofheItemInput;
 use crate::metadata::{EncryptionMetadata, PreprocessingMetadata, QuantizationMetadata};
 use crate::model::LogisticModel;
 use crate::quantization::config::QuantConfig;
-use crate::tensor::{FheTensorOps, TensorError};
+use crate::tensor::{EncryptedTensor, FheTensorOps, TensorError};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ExportedModel {
@@ -93,9 +93,49 @@ pub struct EncryptedTensorArtifact {
     pub bytes: Vec<u8>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaskedModelPackage {
+    pub session_id: String,
+    pub masked_encrypted_weights: EncryptedTensor,
+    pub metadata: MaskedModelMetadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaskedModelMetadata {
+    pub backend: String,
+    pub rows: usize,
+    pub cols: usize,
+    pub element_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocalMaskStore {
+    pub session_id: String,
+    pub mask_weights: Vec<u32>,
+}
+
 pub fn export_to_json(model: &ExportedModel, output_path: &str) -> Result<(), Box<dyn Error>> {
     let json = serde_json::to_vec_pretty(model)?;
     fs::write(output_path, json)?;
+    Ok(())
+}
+
+pub fn write_masked_model_package(
+    path: &Path,
+    package: &MaskedModelPackage,
+) -> Result<(), TensorError> {
+    let json = serde_json::to_vec_pretty(package)
+        .map_err(|error| TensorError::Io(format!("while serializing masked model package: {error}")))?;
+    fs::write(path, json)
+        .map_err(|error| TensorError::Io(format!("while writing masked model package: {error}")))?;
+    Ok(())
+}
+
+pub fn write_local_mask_store(path: &Path, store: &LocalMaskStore) -> Result<(), TensorError> {
+    let json = serde_json::to_vec_pretty(store)
+        .map_err(|error| TensorError::Io(format!("while serializing local mask store: {error}")))?;
+    fs::write(path, json)
+        .map_err(|error| TensorError::Io(format!("while writing local mask store: {error}")))?;
     Ok(())
 }
 
