@@ -1,0 +1,26 @@
+{
+  "rows": 2,
+  "columns": 2,
+  "features": [
+    "FeatureA",
+    "FeatureB"
+  ],
+  "featureTypes": [
+    "u32",
+    "u32"
+  ],
+  "quantization": {
+    "scale": 1000,
+    "scheme": "fixed_point_u32"
+  },
+  "preprocessing": {
+    "normalization": "none",
+    "featureOrderLocked": true
+  },
+  "encryption": {
+    "scheme": "fhenix_cofhe",
+    "chainId": 31337,
+    "securityZone": 0,
+    "contextHash": "poc-localcofhe-context"
+  }
+}

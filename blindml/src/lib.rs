@@ -4,7 +4,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use ppml_core::context::FheContext;
-use ppml_core::export::write_model_export;
+use ppml_core::dataset::{load_encrypted_dataset, CofheItemInput};
+use ppml_core::export::{
+    export_to_json, with_compatibility_hashes, ExportedEncryptedTensors, ExportedModel,
+    ExportedModelInfo, InputSchema, write_model_export,
+};
+use ppml_core::metadata::load_dataset_metadata;
 use ppml_core::model::LogisticModel;
 use ppml_core::noise::NoiseScheduler;
 use ppml_core::optimizer::SgdOptimizer;
@@ -272,10 +277,92 @@ impl BlindLogisticRegression {
     }
 }
 
+#[pyfunction]
+pub fn load_and_validate_package(dataset_path: &str, metadata_path: &str) -> PyResult<()> {
+    validate_package(dataset_path, metadata_path).map(|_| ())
+}
+
+#[pyfunction]
+pub fn export_poc_model(
+    dataset_path: &str,
+    metadata_path: &str,
+    output_path: &str,
+) -> PyResult<()> {
+    let (metadata, dataset) = validate_package(dataset_path, metadata_path)?;
+
+    if dataset.len() < 3 {
+        return Err(PyValueError::new_err(
+            "PoC export requires at least 3 encrypted items to simulate weights and bias",
+        ));
+    }
+
+    let exported_model = with_compatibility_hashes(ExportedModel {
+        model: ExportedModelInfo {
+            name: "PPML-PoC-LogReg".to_string(),
+            model_type: "logistic_regression".to_string(),
+        },
+        input_schema: InputSchema {
+            rows: metadata.rows,
+            columns: metadata.columns,
+            features: metadata.features.clone(),
+            feature_types: metadata.feature_types.clone(),
+        },
+        quantization: metadata.quantization.clone(),
+        preprocessing: metadata.preprocessing.clone(),
+        encryption: metadata.encryption.clone(),
+        input_schema_hash: String::new(),
+        context_hash: String::new(),
+        encrypted_tensors: ExportedEncryptedTensors {
+            weights: vec![dataset[0].clone(), dataset[1].clone()],
+            bias: vec![dataset[2].clone()],
+        },
+    })
+    .map_err(|error| PyRuntimeError::new_err(format!("failed to build export model: {error}")))?;
+
+    export_to_json(&exported_model, output_path).map_err(|error| {
+        PyRuntimeError::new_err(format!("failed to write exported PoC model to {output_path}: {error}"))
+    })?;
+
+    Ok(())
+}
+
+fn validate_package(
+    dataset_path: &str,
+    metadata_path: &str,
+) -> PyResult<(ppml_core::metadata::DatasetMetadata, Vec<CofheItemInput>)> {
+    let metadata = load_dataset_metadata(metadata_path).map_err(|error| {
+        PyValueError::new_err(format!(
+            "failed to load dataset metadata from {metadata_path}: {error}"
+        ))
+    })?;
+    let dataset = load_encrypted_dataset(dataset_path).map_err(|error| {
+        PyValueError::new_err(format!(
+            "failed to load encrypted dataset from {dataset_path}: {error}"
+        ))
+    })?;
+
+    let expected_len = metadata.rows.checked_mul(metadata.columns).ok_or_else(|| {
+        PyValueError::new_err("shape mismatch: rows * columns overflowed usize")
+    })?;
+
+    if dataset.len() != expected_len {
+        return Err(PyValueError::new_err(format!(
+            "Shape mismatch: metadata expects {expected_len} encrypted items ({} rows x {} columns), but dataset payload contains {} items",
+            metadata.rows,
+            metadata.columns,
+            dataset.len()
+        )));
+    }
+
+    Ok((metadata, dataset))
+}
+
 #[pymodule]
 fn blindml(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
     module.add_class::<BlindContext>()?;
     module.add_class::<BlindLogisticRegression>()?;
+    module.add_function(wrap_pyfunction!(load_and_validate_package, module)?)?;
+    module.add_function(wrap_pyfunction!(export_poc_model, module)?)?;
     Ok(())
 }
 

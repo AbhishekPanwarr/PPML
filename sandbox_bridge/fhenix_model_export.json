@@ -1,0 +1,65 @@
+{
+  "model": {
+    "name": "Diabetes-LogReg",
+    "type": "logistic_regression"
+  },
+  "input_schema": {
+    "rows": 1,
+    "columns": 3,
+    "features": [
+      "Glucose",
+      "BMI",
+      "Age"
+    ],
+    "featureTypes": [
+      "u32",
+      "u32",
+      "u32"
+    ]
+  },
+  "quantization": {
+    "scale": 1000,
+    "scheme": "fixed_point_u32"
+  },
+  "preprocessing": {
+    "normalization": "none",
+    "featureOrderLocked": true
+  },
+  "encryption": {
+    "scheme": "fhenix_cofhe",
+    "chainId": 31337,
+    "securityZone": 0
+  },
+  "input_schema_hash": "0x43b3fc609643240684b07508a8be034fe5b153a17d11ff321aa3908899baa6cd",
+  "context_hash": "0x73c9cccb1a44b4b0618def553e13a2782a29d3266928b8caaec574d9d956d1ee",
+  "encrypted_tensors": {
+    "weights": [
+      {
+        "ctHash": "22085542967782666975809074314915945510677607700392967580859679608286312662016",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0x028c98c07eaa5b28f034c40ffc5a3aea0dcb25a9145d83ce728a7e858fca09061f97732c6dd6f076ab1f903475b6f5d25235d55cc73f64872d70ba71c7ecdf531b"
+      },
+      {
+        "ctHash": "114789698603814392440771691885069079911091660575939662173539842495904200197120",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0xff671809b7aa5499ea36675b52fc9c8f37424d6be698128f4c200d66e1a4d4de6083040ee9b75264483da8b28e8b5bdb148ef6c4b7d8a73afd80df7307f1512e1c"
+      },
+      {
+        "ctHash": "19081830084508769261876742299088528003990050962100687060769916159826008605696",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0xc0f57a184305d94644dcacad4530e72a9808a8377bf83765c47922dc12ba25f5527e9088f59255bd8ba1a6c6a820843129deb594980fee93ad0abb8a83bfd9861b"
+      }
+    ],
+    "bias": [
+      {
+        "ctHash": "40848696641750239659906207925104088347869233846035955968264272485570991686656",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0xcee16a2505ebfd00c7ae94641bb64ea5f75b523255e4fbb517eba03e4edf67cc18e6f61fe1977222f7412505801365c09fc1998251039eb2c6aec27cf97357471b"
+      }
+    ]
+  }
+}

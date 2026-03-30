@@ -1,6 +1,8 @@
 pub mod activation;
 pub mod context;
+pub mod dataset;
 pub mod export;
+pub mod metadata;
 pub mod model;
 pub mod noise;
 pub mod optimizer;

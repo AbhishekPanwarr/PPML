@@ -1,0 +1,58 @@
+{
+  "model": {
+    "name": "PPML-PoC-LogReg",
+    "type": "logistic_regression"
+  },
+  "input_schema": {
+    "rows": 2,
+    "columns": 2,
+    "features": [
+      "FeatureA",
+      "FeatureB"
+    ],
+    "featureTypes": [
+      "u32",
+      "u32"
+    ]
+  },
+  "quantization": {
+    "scale": 1000,
+    "scheme": "fixed_point_u32"
+  },
+  "preprocessing": {
+    "normalization": "none",
+    "featureOrderLocked": true
+  },
+  "encryption": {
+    "scheme": "fhenix_cofhe",
+    "chainId": 31337,
+    "securityZone": 0,
+    "contextHash": "poc-localcofhe-context"
+  },
+  "input_schema_hash": "0x340a7269994c83fdf2e47efa663e2be9fd157eba062a9db9f78b5ac26e6a238e",
+  "context_hash": "0xc9dc728d65d27a0c4e8ce5357b30b6eefebf99580ca36e3988834735ca5bacf4",
+  "encrypted_tensors": {
+    "weights": [
+      {
+        "ctHash": "44042831783420683175157662650809948604197891577298742705239036113626241106944",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0x7e7aca6d290eed1d8e82b2dc438c9123964264876139db522613d630e87927a370b0af28531c3c1766c3832b203be4887be59b9614af2bf6b3fb09cd7d6d366f1c"
+      },
+      {
+        "ctHash": "38922868628256925992912397846535242667306651462121747748612246678559302943744",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0x1d4fc2958fa18bf014dcec1fd1b25a6291a7236a605089c69b9bcdf77224498535c09edbdd323b199ff29e5a8a66e9cb75f0d8a5c33168ccef727780b39a78a11b"
+      }
+    ],
+    "bias": [
+      {
+        "ctHash": "3685703413463395500802936729659230081946441281313229801297478975939015279616",
+        "securityZone": 0,
+        "utype": 4,
+        "signature": "0x6c17ded96d7ef66f7ae6958dd9bb8346e1fdb7619012e19bdd40509672859fb22e1c10f2366a5ed39934b02370fe765f3c2c92cb159d53e925b02342b9fbfc5e1c"
+      }
+    ]
+  }
+}
