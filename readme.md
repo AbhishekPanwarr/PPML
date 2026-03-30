@@ -112,6 +112,40 @@ PPML/
 └── .cargo/config.toml         # Workspace-level build settings
 ```
 
+## Environment and configuration
+
+`PPML` does not require the frontend/backend/web3 env files used by `blindference`.
+
+There is no need to create:
+
+- `frontend/.env.local`
+- `backend/.env`
+- `fhenix_inference/.env`
+
+inside this repo, because those belong to the application repository.
+
+For `PPML`, the main local setup pieces are:
+
+- a Python virtual environment for the wrapper/tests
+- a Rust toolchain for the core engine
+- optional CUDA support for GPU builds
+
+Typical local bootstrap:
+
+```bash
+cd /home/abhieren/Drive/Projects/Buildathon/Fhenix/PPML
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+If you use the Python bridge, also build the extension:
+
+```bash
+maturin develop --release -m blindml/Cargo.toml
+```
+
 ## Execution paths
 
 Choose the path that matches your hardware and goal.
@@ -188,6 +222,12 @@ The important integration artifact is:
 
 This file is intended to be consumed by the application layer in `blindference`.
 
+By convention, the exporter writes:
+
+- [`PPML/model_export.json`](/home/abhieren/Drive/Projects/Buildathon/Fhenix/PPML/model_export.json)
+
+The backend in `blindference` can read this file to expose training/export status.
+
 ## What lives in `blindference`
 
 The following moved out of this repo and now live in the private application repository:
@@ -212,6 +252,20 @@ those belong in `blindference`, not in `PPML`.
 1. Train or fine-tune the encrypted model in `PPML`
 2. Export the final model state as `model_export.json`
 3. Move to `blindference` for contract deployment, app integration, and user-facing inference flow
+
+## Where to look next
+
+If you need:
+
+- contract deployment
+- Sepolia addresses
+- frontend wallet configuration
+- backend MongoDB configuration
+- browser-side encryption/decryption
+
+go to:
+
+- [`blindference/README.md`](/home/abhieren/Drive/Projects/Buildathon/Fhenix/blindference/README.md)
 
 ## Notes
 
