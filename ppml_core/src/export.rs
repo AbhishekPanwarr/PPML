@@ -1,14 +1,19 @@
 use std::error::Error;
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use tfhe::integer::RadixCiphertext;
 
+use crate::context::FheContext;
 use crate::dataset::CofheItemInput;
 use crate::metadata::{EncryptionMetadata, PreprocessingMetadata, QuantizationMetadata};
 use crate::model::LogisticModel;
 use crate::quantization::config::QuantConfig;
+use crate::tensor::noise::NoiseMetadata;
+use crate::tensor::shape::TensorShape;
 use crate::tensor::{EncryptedTensor, FheTensorOps, TensorError};
 
 #[derive(Debug, Clone, Serialize)]
@@ -114,6 +119,20 @@ pub struct LocalMaskStore {
     pub mask_weights: Vec<u32>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SerializedEncryptedTensor {
+    data: Vec<RadixCiphertext>,
+    shape: TensorShape,
+    noise: NoiseMetadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SerializedMaskedModelPackage {
+    session_id: String,
+    masked_encrypted_weights: SerializedEncryptedTensor,
+    metadata: MaskedModelMetadata,
+}
+
 pub fn export_to_json(model: &ExportedModel, output_path: &str) -> Result<(), Box<dyn Error>> {
     let json = serde_json::to_vec_pretty(model)?;
     fs::write(output_path, json)?;
@@ -137,6 +156,29 @@ pub fn write_local_mask_store(path: &Path, store: &LocalMaskStore) -> Result<(),
     fs::write(path, json)
         .map_err(|error| TensorError::Io(format!("while writing local mask store: {error}")))?;
     Ok(())
+}
+
+pub fn read_masked_model_package(
+    path: &Path,
+    ctx: Arc<FheContext>,
+) -> Result<MaskedModelPackage, TensorError> {
+    let json = fs::read(path)
+        .map_err(|error| TensorError::Io(format!("while reading masked model package: {error}")))?;
+    let package: SerializedMaskedModelPackage = serde_json::from_slice(&json)
+        .map_err(|error| TensorError::Io(format!("while deserializing masked model package: {error}")))?;
+
+    let masked_encrypted_weights = EncryptedTensor::from_parts(
+        package.masked_encrypted_weights.data,
+        package.masked_encrypted_weights.shape,
+        package.masked_encrypted_weights.noise,
+        ctx,
+    )?;
+
+    Ok(MaskedModelPackage {
+        session_id: package.session_id,
+        masked_encrypted_weights,
+        metadata: package.metadata,
+    })
 }
 
 pub fn compute_input_schema_hash(input_schema: &InputSchema) -> Result<String, Box<dyn Error>> {

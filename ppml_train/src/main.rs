@@ -32,7 +32,9 @@ fn main() -> Result<(), TensorError> {
 
     let quant = QuantConfig::q16f8();
     let quantizer = Quantizer::new(quant.clone());
-    let (client_key, ctx) = FheContext::generate_keys_q16f8();
+    let key_cache_path = ppml_root().join("fhe_keys.bin");
+    let (client_key, ctx) = FheContext::load_or_generate(&key_cache_path)
+        .map_err(|error| TensorError::Io(format!("while loading cached FHE keys: {error}")))?;
     info!(backend = ctx.backend_name(), "initialized FHE backend");
     let (features, labels) = generate_synthetic_dataset(&quant)?;
     let mut model =
