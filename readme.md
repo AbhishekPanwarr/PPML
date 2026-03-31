@@ -5,7 +5,7 @@
 
 # PPML
 
-PPML is the encrypted machine learning repository that powers the training side of the Blindference stack.
+PPML is the encrypted ML/statistics layer for Fhenix-compatible system repository that powers the training side of the Blindference stack.
 
 It is designed as an off-chain, Fhenix-compatible ML layer built on `tfhe-rs` radix. In practice, that means PPML gives ML engineers a Rust engine and a Python-facing abstraction for training and exporting models over encrypted data, while the companion `blindference` repository handles wallets, contracts, web flows, and on-chain confidential inference.
 
